@@ -15,13 +15,14 @@ blueprint:
         text:
 
     scroll_light:
-      name: Light for Scroll Brightness
+      name: Light(s) for Scroll Brightness
       description: >
-        Light controlled by the scroll wheel. Turns on with the wheel's
+        Light(s) controlled by the scroll wheel. Turns on with the wheel's
         brightness level, turns off automatically at level 0.
       selector:
         entity:
           domain: light
+          multiple: true
 
     scroll_transition:
       name: Scroll Transition
@@ -35,28 +36,28 @@ blueprint:
           unit_of_measurement: s
 
     on_action:
-      name: Single Press "On" (top button)
+      name: Single Press (top button)
       description: Action to run when action = on.
       default: []
       selector:
         action:
 
     off_action:
-      name: Single Press "Off" (bottom button)
+      name: Single Press (bottom button)
       description: Action to run when action = off.
       default: []
       selector:
         action:
 
     on_double_action:
-      name: Double Press "On"
+      name: Double Press (top button)
       description: Action to run when action = on_double.
       default: []
       selector:
         action:
 
     off_double_action:
-      name: Double Press "Off"
+      name: Triple Press (bottom button)
       description: Action to run when action = off_double.
       default: []
       selector:
