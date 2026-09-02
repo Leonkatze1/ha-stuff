@@ -1,0 +1,128 @@
+blueprint:
+  name: IKEA Bilresa Scroll Wheel - Full Actions
+  description: >
+    Modular automation for the IKEA Bilresa scroll wheel remote (E2490) via
+    Zigbee2MQTT. Handles every reported action: on, off, on_double, off_double,
+    and the scroll wheel's brightness_move_to_level (which also turns the
+    light off automatically at level 0).
+  domain: automation
+  input:
+    mqtt_topic:
+      name: MQTT Topic
+      description: The zigbee2mqtt topic of the remote.
+      default: zigbee2mqtt/Bilresa Scroll
+      selector:
+        text:
+
+    scroll_light:
+      name: Light for Scroll Brightness
+      description: >
+        Light controlled by the scroll wheel. Turns on with the wheel's
+        brightness level, turns off automatically at level 0.
+      selector:
+        entity:
+          domain: light
+
+    scroll_transition:
+      name: Scroll Transition
+      description: Transition time (seconds) for brightness changes from the scroll wheel.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 0.1
+          unit_of_measurement: s
+
+    on_action:
+      name: Single Press "On" (top button)
+      description: Action to run when action = on.
+      default: []
+      selector:
+        action:
+
+    off_action:
+      name: Single Press "Off" (bottom button)
+      description: Action to run when action = off.
+      default: []
+      selector:
+        action:
+
+    on_double_action:
+      name: Double Press "On"
+      description: Action to run when action = on_double.
+      default: []
+      selector:
+        action:
+
+    off_double_action:
+      name: Double Press "Off"
+      description: Action to run when action = off_double.
+      default: []
+      selector:
+        action:
+
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: mqtt
+    options:
+      topic: !input mqtt_topic
+
+variables:
+  bilresa_action: "{{ trigger.payload_json.action }}"
+  bilresa_level: "{{ trigger.payload_json.action_level | default(none) }}"
+
+conditions: []
+
+actions:
+  - choose:
+      # Scroll wheel -> brightness, with auto on/off at the extremes
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{ bilresa_action == 'brightness_move_to_level' and
+              bilresa_level is not none }}
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ bilresa_level | int(1) == 0 }}"
+                sequence:
+                  - action: light.turn_off
+                    target:
+                      entity_id: !input scroll_light
+                    data:
+                      transition: !input scroll_transition
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input scroll_light
+                data:
+                  brightness: "{{ bilresa_level }}"
+                  transition: !input scroll_transition
+
+      # Top button, single press
+      - conditions:
+          - condition: template
+            value_template: "{{ bilresa_action == 'on' }}"
+        sequence: !input on_action
+
+      # Bottom button, single press
+      - conditions:
+          - condition: template
+            value_template: "{{ bilresa_action == 'off' }}"
+        sequence: !input off_action
+
+      # Top button, double press
+      - conditions:
+          - condition: template
+            value_template: "{{ bilresa_action == 'on_double' }}"
+        sequence: !input on_double_action
+
+      # Bottom button, double press
+      - conditions:
+          - condition: template
+            value_template: "{{ bilresa_action == 'off_double' }}"
+        sequence: !input off_double_action
